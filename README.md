@@ -15,7 +15,8 @@ QuietPDF is a minimal, fast, and privacy-first PDF utility web app.
 
 - **Vite**: Ultra-fast frontend tooling & bundler.
 - **TypeScript**: Type-safe vanilla development (zero UI framework overhead).
-- **pdf-lib**: Client-side PDF manipulation library.
+- **pdf-lib**: Client-side PDF manipulation & generation library.
+- **pdfjs-dist**: PDF rendering engine for converting PDF pages to images.
 
 ---
 
@@ -27,12 +28,13 @@ quietpdf/
 ├── src/
 │   ├── styles/         # CSS stylesheets
 │   │   └── style.css
-│   ├── tools/          # Future PDF utility modules
-│   │   ├── merge.ts        (planned)
-│   │   ├── compress.ts     (planned)
-│   │   ├── imageToPdf.ts   (planned)
-│   │   └── pdfToImage.ts   (planned)
-│   └── main.ts         # App entry point
+│   ├── tools/          # Client-side PDF utility modules
+│   │   ├── merge.ts        (Merge multiple PDFs)
+│   │   ├── compress.ts     (Compress PDF images)
+│   │   ├── imageToPdf.ts   (Convert images to PDF)
+│   │   └── pdfToImage.ts   (Convert PDF pages to PNG images)
+│   ├── vite-env.d.ts   # Vite environment types
+│   └── main.ts         # App entry point & UI controller
 ├── index.html          # Main HTML document
 ├── package.json        # Project metadata and scripts
 ├── tsconfig.json       # TypeScript configuration
