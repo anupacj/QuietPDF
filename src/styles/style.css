@@ -592,42 +592,94 @@ body {
   background-color: var(--accent-soft);
 }
 
+/* Trust / Context Strip */
+.trust-strip {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+@media (max-width: 680px) {
+  .trust-strip {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+    margin-top: 1.25rem;
+  }
+}
+
+.trust-step {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+.trust-step-num {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  color: var(--accent);
+  font-size: 0.875rem;
+  flex-shrink: 0;
+}
+
+.trust-step-text {
+  color: var(--text-muted);
+}
+
 /* Actions & Primary Buttons */
 .actions {
   margin-top: 1.75rem;
 }
 
 .btn-primary {
-  width: 100%;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  background-color: var(--accent);
-  color: #FFFFFF;
   font-family: var(--font-sans);
   font-size: 0.9375rem;
   font-weight: 500;
   padding: 0.85rem 1.25rem;
-  border: 1px solid transparent;
+  border: 1px solid var(--accent);
   border-radius: var(--radius-md);
   cursor: pointer;
-  transition: background-color 0.15s ease;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.btn-primary:not(:disabled) {
+  background-color: #2F6F5E;
+  border-color: #2F6F5E;
+  color: #FFFFFF;
+  cursor: pointer;
 }
 
 .btn-primary:hover:not(:disabled) {
   background-color: var(--accent-hover);
+  border-color: var(--accent-hover);
+  color: #FFFFFF;
 }
 
 .btn-primary:active:not(:disabled) {
   background-color: var(--accent-active);
+  border-color: var(--accent-active);
+  color: #FFFFFF;
 }
 
 .btn-primary:disabled {
-  background-color: #EAEAEA;
-  color: #9A9A96;
-  border-color: transparent;
+  background-color: #F4F4F2;
+  color: #A8A8A2;
+  border: 1px solid #E4E4E1;
   cursor: not-allowed;
+}
+
+.btn-primary:disabled:has(.spinner) {
+  background-color: var(--accent);
+  border-color: var(--accent);
+  color: #FFFFFF;
+  cursor: wait;
 }
 
 .spinner {
@@ -637,11 +689,6 @@ body {
   border-top-color: #ffffff;
   border-radius: 50%;
   animation: spin 0.6s linear infinite;
-}
-
-.btn-primary:disabled .spinner {
-  border-color: rgba(100, 116, 139, 0.3);
-  border-top-color: var(--text-dim);
 }
 
 @keyframes spin {
