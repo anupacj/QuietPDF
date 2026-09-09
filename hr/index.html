@@ -7,21 +7,31 @@
     <meta name="description" content="Merge employee onboarding packets, payroll reports, and HR records locally in your browser. Personal data never leaves your computer." />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/src/styles/style.css" />
   </head>
   <body>
-    <div class="app-shell">
-      <main class="card">
-        <!-- Back navigation link -->
-        <a href="/" class="nav-back">&larr; QuietPDF Home</a>
+    <!-- 1. Header Bar -->
+    <header class="site-header">
+      <div class="header-container">
+        <a href="/" class="header-logo">QuietPDF</a>
+        <nav class="header-nav" aria-label="Main Navigation">
+          <a href="/legal/" class="nav-item">Legal</a>
+          <a href="/healthcare/" class="nav-item">Healthcare</a>
+          <a href="/hr/" class="nav-item active">HR</a>
+        </nav>
+      </div>
+    </header>
 
-        <!-- Hero Header for HR -->
-        <header class="header">
-          <h1 class="brand">Confidential document tools for HR and operations</h1>
-          <p class="tagline">Assemble onboarding packets, compress payroll archives, and prepare employee records without routing sensitive personal information through third-party servers.</p>
-        </header>
+    <div class="page-container">
+      <!-- 2. Hero Section for HR -->
+      <section class="hero-section">
+        <h1 class="hero-headline">Confidential document tools for HR and operations</h1>
+        <p class="hero-subhead">Assemble onboarding packets, compress payroll archives, and prepare employee records without routing sensitive personal information through third-party servers.</p>
+      </section>
 
+      <!-- 3. Tool Workspace -->
+      <main class="tool-workspace">
         <!-- Tool Navigation Tabs -->
         <nav class="tabs" aria-label="Tools">
           <button type="button" class="tab-btn active" data-tool="merge" id="tab-merge">
@@ -45,7 +55,7 @@
         <!-- ================= 1. MERGE ================= -->
         <section id="view-merge" class="tool-view" aria-label="Merge PDFs">
           <div id="dropzone" class="dropzone" tabindex="0" role="button" aria-label="Select PDF files to merge">
-            <svg class="dropzone-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <svg class="dropzone-icon" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
               <polyline points="17 8 12 3 7 8" />
               <line x1="12" y1="3" x2="12" y2="15" />
@@ -78,7 +88,7 @@
         <!-- ================= 2. COMPRESS ================= -->
         <section id="view-compress" class="tool-view" aria-label="Compress PDF" hidden>
           <div id="compress-dropzone" class="dropzone" tabindex="0" role="button" aria-label="Select PDF file to compress">
-            <svg class="dropzone-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <svg class="dropzone-icon" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
               <polyline points="17 8 12 3 7 8" />
               <line x1="12" y1="3" x2="12" y2="15" />
@@ -156,7 +166,7 @@
         <!-- ================= 3. IMAGE TO PDF ================= -->
         <section id="view-image-to-pdf" class="tool-view" aria-label="Image to PDF" hidden>
           <div id="img2pdf-dropzone" class="dropzone" tabindex="0" role="button" aria-label="Select image files to convert">
-            <svg class="dropzone-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <svg class="dropzone-icon" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
               <polyline points="17 8 12 3 7 8" />
               <line x1="12" y1="3" x2="12" y2="15" />
@@ -189,7 +199,7 @@
         <!-- ================= 4. PDF TO IMAGE ================= -->
         <section id="view-pdf-to-image" class="tool-view" aria-label="PDF to Image" hidden>
           <div id="pdf2img-dropzone" class="dropzone" tabindex="0" role="button" aria-label="Select PDF file to convert">
-            <svg class="dropzone-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <svg class="dropzone-icon" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
               <polyline points="17 8 12 3 7 8" />
               <line x1="12" y1="3" x2="12" y2="15" />
@@ -224,19 +234,24 @@
             </button>
           </div>
         </section>
-
-        <!-- Plain Footer with Niche Links -->
-        <footer class="footer">
-          <nav class="footer-links" aria-label="Use cases">
-            <a href="/" class="footer-link">Overview</a>
-            <a href="/legal/" class="footer-link">Legal</a>
-            <a href="/healthcare/" class="footer-link">Healthcare</a>
-            <a href="/hr/" class="footer-link active">Human Resources</a>
-          </nav>
-          <p>All processing happens in your browser. Nothing is uploaded.</p>
-        </footer>
       </main>
+
+      <!-- 4. Trust Line -->
+      <div class="trust-line">No uploads. No accounts. No file size limits.</div>
     </div>
+
+    <!-- 5. Footer -->
+    <footer class="site-footer">
+      <div class="footer-container">
+        <nav class="footer-nav" aria-label="Use cases">
+          <a href="/" class="footer-link">Overview</a>
+          <a href="/legal/" class="footer-link">Legal</a>
+          <a href="/healthcare/" class="footer-link">Healthcare</a>
+          <a href="/hr/" class="footer-link active">Human Resources</a>
+        </nav>
+        <p class="footer-arch">All processing runs client-side via WebAssembly and JavaScript. Documents never leave your device.</p>
+      </div>
+    </footer>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
