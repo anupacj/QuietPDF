@@ -4,10 +4,9 @@ import { compressPdf } from './tools/compress';
 import { imagesToPdf } from './tools/imageToPdf';
 import { pdfToImages } from './tools/pdfToImage';
 
-// Global Notifications & Badges
+// Global Notifications
 const errorBox = document.getElementById('error-box') as HTMLDivElement;
 const successBox = document.getElementById('success-box') as HTMLDivElement;
-const activeToolBadge = document.getElementById('active-tool-badge') as HTMLElement;
 
 // Helpers: Format file size
 function formatBytes(bytes: number): string {
@@ -53,26 +52,22 @@ function triggerDownload(data: Uint8Array | Blob, fileName: string, mimeType = '
 // Tab Navigation
 type ToolId = 'merge' | 'compress' | 'image-to-pdf' | 'pdf-to-image';
 
-const tabs: Record<ToolId, { tab: HTMLButtonElement; view: HTMLElement; badge: string }> = {
+const tabs: Record<ToolId, { tab: HTMLButtonElement; view: HTMLElement }> = {
   merge: {
     tab: document.getElementById('tab-merge') as HTMLButtonElement,
     view: document.getElementById('view-merge') as HTMLElement,
-    badge: 'Merge',
   },
   compress: {
     tab: document.getElementById('tab-compress') as HTMLButtonElement,
     view: document.getElementById('view-compress') as HTMLElement,
-    badge: 'Compress',
   },
   'image-to-pdf': {
     tab: document.getElementById('tab-image-to-pdf') as HTMLButtonElement,
     view: document.getElementById('view-image-to-pdf') as HTMLElement,
-    badge: 'Image → PDF',
   },
   'pdf-to-image': {
     tab: document.getElementById('tab-pdf-to-image') as HTMLButtonElement,
     view: document.getElementById('view-pdf-to-image') as HTMLElement,
-    badge: 'PDF → Image',
   },
 };
 
@@ -83,7 +78,6 @@ function switchTool(selected: ToolId): void {
     tabs[id].tab.classList.toggle('active', isMatch);
     tabs[id].view.hidden = !isMatch;
   });
-  activeToolBadge.textContent = tabs[selected].badge;
 }
 
 (Object.keys(tabs) as ToolId[]).forEach((id) => {
@@ -115,7 +109,7 @@ function renderMergeList(): void {
   }
 
   fileSection.hidden = false;
-  fileCount.textContent = `Selected Files (${total})`;
+  fileCount.textContent = `Selected files (${total})`;
   mergeBtn.disabled = total < 2;
 
   filesToMerge.forEach((file, index) => {
@@ -124,7 +118,7 @@ function renderMergeList(): void {
 
     const badge = document.createElement('span');
     badge.className = 'file-index';
-    badge.textContent = String(index + 1);
+    badge.textContent = `${index + 1}.`;
 
     const details = document.createElement('div');
     details.className = 'file-details';
@@ -146,7 +140,7 @@ function renderMergeList(): void {
 
     const upBtn = document.createElement('button');
     upBtn.type = 'button';
-    upBtn.className = 'btn-icon';
+    upBtn.className = 'btn-control';
     upBtn.title = 'Move up';
     upBtn.innerHTML = '&#8593;';
     upBtn.disabled = index === 0;
@@ -154,7 +148,7 @@ function renderMergeList(): void {
 
     const downBtn = document.createElement('button');
     downBtn.type = 'button';
-    downBtn.className = 'btn-icon';
+    downBtn.className = 'btn-control';
     downBtn.title = 'Move down';
     downBtn.innerHTML = '&#8595;';
     downBtn.disabled = index === total - 1;
@@ -162,8 +156,8 @@ function renderMergeList(): void {
 
     const deleteBtn = document.createElement('button');
     deleteBtn.type = 'button';
-    deleteBtn.className = 'btn-icon btn-delete';
-    deleteBtn.title = 'Remove file';
+    deleteBtn.className = 'btn-control btn-delete';
+    deleteBtn.title = 'Remove';
     deleteBtn.innerHTML = '&#10005;';
     deleteBtn.addEventListener('click', () => removeMergeFile(index));
 
@@ -196,7 +190,7 @@ function handleMergeFiles(files: FileList | null): void {
   });
 
   if (nonPdfFound) {
-    showError('Some selected files were skipped because they are not valid PDF files.');
+    showError('One or more selected files were skipped because they are not valid PDF documents.');
   }
 
   renderMergeList();
@@ -266,21 +260,21 @@ dropzone.addEventListener('drop', (e) => {
 
 mergeBtn.addEventListener('click', async () => {
   if (filesToMerge.length < 2) {
-    showError('Please select at least 2 PDF files to merge.');
+    showError('Please select at least two PDF files to merge.');
     return;
   }
 
   clearMessages();
   const originalHtml = mergeBtn.innerHTML;
   mergeBtn.disabled = true;
-  mergeBtn.innerHTML = '<span class="spinner"></span> <span>Merging PDFs...</span>';
+  mergeBtn.innerHTML = '<span class="spinner"></span> <span>Merging files...</span>';
 
   try {
     const mergedBytes = await mergePdfs(filesToMerge);
     triggerDownload(mergedBytes, 'merged.pdf');
-    showSuccess(`Successfully merged ${filesToMerge.length} PDFs! Your download has started.`);
+    showSuccess('Files merged successfully. Download started.');
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'An unexpected error occurred while merging.';
+    const message = err instanceof Error ? err.message : 'An error occurred while merging files.';
     showError(message);
   } finally {
     mergeBtn.innerHTML = originalHtml;
@@ -406,7 +400,7 @@ compressBtn.addEventListener('click', async () => {
 
   const originalHtml = compressBtn.innerHTML;
   compressBtn.disabled = true;
-  compressBtn.innerHTML = '<span class="spinner"></span> <span>Compressing PDF...</span>';
+  compressBtn.innerHTML = '<span class="spinner"></span> <span>Compressing file...</span>';
 
   try {
     const quality = getSelectedQuality();
@@ -425,16 +419,16 @@ compressBtn.addEventListener('click', async () => {
     resCompressedSize.textContent = formatBytes(newSize);
 
     if (diff > 0 && percent > 0) {
-      resReductionBadge.textContent = `-${percent}% reduction (saved ${formatBytes(diff)})`;
+      resReductionBadge.textContent = `-${percent}% (${formatBytes(diff)} saved)`;
     } else {
-      resReductionBadge.textContent = 'Already optimally compressed';
+      resReductionBadge.textContent = 'Optimal size already achieved';
     }
 
     compressResults.hidden = false;
     triggerDownload(compressedBytes, lastDownloadName);
-    showSuccess('PDF compressed successfully! Your download has started.');
+    showSuccess('PDF compressed successfully. Download started.');
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'An error occurred while compressing the PDF.';
+    const message = err instanceof Error ? err.message : 'An error occurred while compressing the file.';
     showError(message);
   } finally {
     compressBtn.innerHTML = originalHtml;
@@ -473,7 +467,7 @@ function renderImg2PdfList(): void {
   }
 
   img2pdfFileSection.hidden = false;
-  img2pdfFileCount.textContent = `Selected Images (${total})`;
+  img2pdfFileCount.textContent = `Selected images (${total})`;
   img2pdfBtn.disabled = false;
 
   imagesToConvert.forEach((file, index) => {
@@ -482,7 +476,7 @@ function renderImg2PdfList(): void {
 
     const badge = document.createElement('span');
     badge.className = 'file-index';
-    badge.textContent = String(index + 1);
+    badge.textContent = `${index + 1}.`;
 
     const details = document.createElement('div');
     details.className = 'file-details';
@@ -504,7 +498,7 @@ function renderImg2PdfList(): void {
 
     const upBtn = document.createElement('button');
     upBtn.type = 'button';
-    upBtn.className = 'btn-icon';
+    upBtn.className = 'btn-control';
     upBtn.title = 'Move up';
     upBtn.innerHTML = '&#8593;';
     upBtn.disabled = index === 0;
@@ -512,7 +506,7 @@ function renderImg2PdfList(): void {
 
     const downBtn = document.createElement('button');
     downBtn.type = 'button';
-    downBtn.className = 'btn-icon';
+    downBtn.className = 'btn-control';
     downBtn.title = 'Move down';
     downBtn.innerHTML = '&#8595;';
     downBtn.disabled = index === total - 1;
@@ -520,8 +514,8 @@ function renderImg2PdfList(): void {
 
     const deleteBtn = document.createElement('button');
     deleteBtn.type = 'button';
-    deleteBtn.className = 'btn-icon btn-delete';
-    deleteBtn.title = 'Remove image';
+    deleteBtn.className = 'btn-control btn-delete';
+    deleteBtn.title = 'Remove';
     deleteBtn.innerHTML = '&#10005;';
     deleteBtn.addEventListener('click', () => removeImg2PdfFile(index));
 
@@ -555,7 +549,7 @@ function handleImg2PdfFiles(files: FileList | null): void {
   });
 
   if (invalidFound) {
-    showError('Some selected files were skipped because they are not recognized images.');
+    showError('One or more selected files were skipped because they are not supported image formats.');
   }
 
   renderImg2PdfList();
@@ -637,9 +631,9 @@ img2pdfBtn.addEventListener('click', async () => {
   try {
     const pdfBytes = await imagesToPdf(imagesToConvert);
     triggerDownload(pdfBytes, 'converted-images.pdf');
-    showSuccess(`Converted ${imagesToConvert.length} image(s) to PDF successfully! Download started.`);
+    showSuccess('PDF document generated successfully. Download started.');
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'An error occurred while creating the PDF.';
+    const message = err instanceof Error ? err.message : 'An error occurred while creating the PDF document.';
     showError(message);
   } finally {
     img2pdfBtn.innerHTML = originalHtml;
@@ -762,7 +756,7 @@ pdf2imgBtn.addEventListener('click', async () => {
       const dlBtn = document.createElement('button');
       dlBtn.type = 'button';
       dlBtn.className = 'btn-page-dl';
-      dlBtn.textContent = `Download Page ${pageNumber}`;
+      dlBtn.textContent = `Page ${pageNumber} (PNG)`;
       dlBtn.addEventListener('click', () => {
         triggerDownload(blob, `${convertedBaseName}-page-${pageNumber}.png`, 'image/png');
       });
@@ -772,10 +766,10 @@ pdf2imgBtn.addEventListener('click', async () => {
     pdf2imgResults.hidden = false;
     pdf2imgDownloadHint.textContent =
       blobs.length === 1
-        ? 'Page 1 was downloaded automatically.'
-        : `All ${blobs.length} pages are downloading automatically. You can also re-download any page below:`;
+        ? 'Download started automatically.'
+        : `All ${blobs.length} pages are downloading automatically. You can also save individual pages below.`;
 
-    // Stagger automatic download of pages so browser doesn't block them
+    // Stagger automatic download of pages so browser doesn't block rapid downloads
     blobs.forEach((blob, idx) => {
       setTimeout(() => {
         const pageNumber = idx + 1;
@@ -787,9 +781,9 @@ pdf2imgBtn.addEventListener('click', async () => {
       }, idx * 250);
     });
 
-    showSuccess(`Successfully converted ${blobs.length} page(s) to PNG images!`);
+    showSuccess('Document converted to images successfully. Download started.');
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'An error occurred while rendering the PDF.';
+    const message = err instanceof Error ? err.message : 'An error occurred while converting the document.';
     showError(message);
   } finally {
     pdf2imgBtn.innerHTML = originalHtml;
