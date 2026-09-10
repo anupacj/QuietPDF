@@ -2,7 +2,8 @@ import './styles/style.css';
 import { mergePdfs } from './tools/merge';
 import { compressPdf } from './tools/compress';
 import { imagesToPdf } from './tools/imageToPdf';
-import { pdfToImages } from './tools/pdfToImage';
+import { loadPdfDocument, renderThumbnail, exportPagesToZip } from './tools/pdfToImage';
+import { pdfToWord } from './tools/pdfToWord';
 
 // Global Notifications
 const errorBox = document.getElementById('error-box') as HTMLDivElement;
@@ -50,7 +51,7 @@ function triggerDownload(data: Uint8Array | Blob, fileName: string, mimeType = '
 }
 
 // Tab Navigation
-type ToolId = 'merge' | 'compress' | 'image-to-pdf' | 'pdf-to-image';
+type ToolId = 'merge' | 'compress' | 'image-to-pdf' | 'pdf-to-image' | 'pdf-to-word';
 
 const tabs: Record<ToolId, { tab: HTMLButtonElement; view: HTMLElement }> = {
   merge: {
@@ -68,6 +69,10 @@ const tabs: Record<ToolId, { tab: HTMLButtonElement; view: HTMLElement }> = {
   'pdf-to-image': {
     tab: document.getElementById('tab-pdf-to-image') as HTMLButtonElement,
     view: document.getElementById('view-pdf-to-image') as HTMLElement,
+  },
+  'pdf-to-word': {
+    tab: document.getElementById('tab-pdf-to-word') as HTMLButtonElement,
+    view: document.getElementById('view-pdf-to-word') as HTMLElement,
   },
 };
 
@@ -646,6 +651,9 @@ img2pdfBtn.addEventListener('click', async () => {
    ========================================================= */
 let pdfToConvertFile: File | null = null;
 let convertedBaseName = 'page';
+let currentPdfDoc: any = null;
+const selectedPages = new Set<number>();
+let totalDocPages = 0;
 
 const pdf2imgDropzone = document.getElementById('pdf2img-dropzone') as HTMLDivElement;
 const pdf2imgFileInput = document.getElementById('pdf2img-file-input') as HTMLInputElement;
@@ -655,15 +663,23 @@ const pdf2imgFileSize = document.getElementById('pdf2img-file-size') as HTMLElem
 const pdf2imgRemoveFile = document.getElementById('pdf2img-remove-file') as HTMLButtonElement;
 const pdf2imgBtn = document.getElementById('pdf2img-btn') as HTMLButtonElement;
 const pdf2imgResults = document.getElementById('pdf2img-results') as HTMLDivElement;
-const pdf2imgPageCount = document.getElementById('pdf2img-page-count') as HTMLElement;
-const pdf2imgPagesList = document.getElementById('pdf2img-pages-list') as HTMLDivElement;
-const pdf2imgDownloadHint = document.getElementById('pdf2img-download-hint') as HTMLElement;
+const pdf2imgSelectedCount = document.getElementById('pdf2img-selected-count') as HTMLElement;
+const pdf2imgSelectAll = document.getElementById('pdf2img-select-all') as HTMLButtonElement;
+const pdf2imgDeselectAll = document.getElementById('pdf2img-deselect-all') as HTMLButtonElement;
+const pdf2imgThumbnails = document.getElementById('pdf2img-thumbnails') as HTMLDivElement;
+const pdf2imgDownloadZipBtn = document.getElementById('pdf2img-download-zip-btn') as HTMLButtonElement;
+
+function updateSelectedCount(): void {
+  const count = selectedPages.size;
+  pdf2imgSelectedCount.textContent = `${count} of ${totalDocPages} pages selected`;
+  pdf2imgDownloadZipBtn.disabled = count === 0;
+}
 
 function handlePdf2ImgFile(files: FileList | null): void {
   if (!files || files.length === 0) return;
 
   clearMessages();
-  pdf2imgResults.hidden = true;
+  resetPdf2ImgResults();
 
   const file = files[0];
   const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
@@ -683,13 +699,28 @@ function handlePdf2ImgFile(files: FileList | null): void {
   pdf2imgBtn.disabled = false;
 }
 
+function resetPdf2ImgResults(): void {
+  if (currentPdfDoc) {
+    try {
+      currentPdfDoc.destroy();
+    } catch {
+      // ignore
+    }
+    currentPdfDoc = null;
+  }
+  selectedPages.clear();
+  totalDocPages = 0;
+  pdf2imgThumbnails.innerHTML = '';
+  pdf2imgResults.hidden = true;
+}
+
 function clearPdf2ImgFile(): void {
   pdfToConvertFile = null;
   pdf2imgFileInput.value = '';
   pdf2imgDropzone.hidden = false;
   pdf2imgFileCard.hidden = true;
   pdf2imgBtn.disabled = true;
-  pdf2imgResults.hidden = true;
+  resetPdf2ImgResults();
   clearMessages();
 }
 
@@ -729,6 +760,30 @@ pdf2imgDropzone.addEventListener('drop', (e) => {
   }
 });
 
+pdf2imgSelectAll.addEventListener('click', () => {
+  for (let p = 1; p <= totalDocPages; p++) {
+    selectedPages.add(p);
+  }
+  const cards = pdf2imgThumbnails.querySelectorAll<HTMLDivElement>('.thumbnail-card');
+  cards.forEach((card) => {
+    card.classList.add('selected');
+    const cb = card.querySelector<HTMLInputElement>('.thumbnail-checkbox');
+    if (cb) cb.checked = true;
+  });
+  updateSelectedCount();
+});
+
+pdf2imgDeselectAll.addEventListener('click', () => {
+  selectedPages.clear();
+  const cards = pdf2imgThumbnails.querySelectorAll<HTMLDivElement>('.thumbnail-card');
+  cards.forEach((card) => {
+    card.classList.remove('selected');
+    const cb = card.querySelector<HTMLInputElement>('.thumbnail-checkbox');
+    if (cb) cb.checked = false;
+  });
+  updateSelectedCount();
+});
+
 pdf2imgBtn.addEventListener('click', async () => {
   if (!pdfToConvertFile) {
     showError('Please select a PDF file to convert.');
@@ -736,57 +791,239 @@ pdf2imgBtn.addEventListener('click', async () => {
   }
 
   clearMessages();
-  pdf2imgResults.hidden = true;
+  resetPdf2ImgResults();
 
   const originalHtml = pdf2imgBtn.innerHTML;
   pdf2imgBtn.disabled = true;
-  pdf2imgBtn.innerHTML = '<span class="spinner"></span> <span>Rendering pages...</span>';
+  pdf2imgBtn.innerHTML = '<span class="spinner"></span> <span>Loading document...</span>';
 
   try {
-    const blobs = await pdfToImages(pdfToConvertFile, (current, total) => {
-      pdf2imgBtn.innerHTML = `<span class="spinner"></span> <span>Rendering page ${current} of ${total}...</span>`;
-    });
+    const pdfDoc = await loadPdfDocument(pdfToConvertFile);
+    currentPdfDoc = pdfDoc;
+    totalDocPages = pdfDoc.numPages;
 
-    pdf2imgPageCount.textContent = String(blobs.length);
-    pdf2imgPagesList.innerHTML = '';
+    if (totalDocPages === 0) {
+      throw new Error('This PDF has no pages.');
+    }
 
-    // Render individual download buttons
-    blobs.forEach((blob, idx) => {
-      const pageNumber = idx + 1;
-      const dlBtn = document.createElement('button');
-      dlBtn.type = 'button';
-      dlBtn.className = 'btn-page-dl';
-      dlBtn.textContent = `Page ${pageNumber} (PNG)`;
-      dlBtn.addEventListener('click', () => {
-        triggerDownload(blob, `${convertedBaseName}-page-${pageNumber}.png`, 'image/png');
+    pdf2imgThumbnails.innerHTML = '';
+    selectedPages.clear();
+
+    for (let pageNum = 1; pageNum <= totalDocPages; pageNum++) {
+      pdf2imgBtn.innerHTML = `<span class="spinner"></span> <span>Processing page ${pageNum} of ${totalDocPages}...</span>`;
+
+      const thumbDataUrl = await renderThumbnail(pdfDoc, pageNum, 180);
+      selectedPages.add(pageNum);
+
+      const card = document.createElement('div');
+      card.className = 'thumbnail-card selected';
+      card.dataset.page = String(pageNum);
+
+      const header = document.createElement('div');
+      header.className = 'thumbnail-header';
+
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.className = 'thumbnail-checkbox';
+      checkbox.checked = true;
+      checkbox.id = `thumb-cb-${pageNum}`;
+
+      const label = document.createElement('label');
+      label.className = 'thumbnail-label';
+      label.htmlFor = `thumb-cb-${pageNum}`;
+      label.textContent = `Page ${pageNum}`;
+
+      header.appendChild(checkbox);
+      header.appendChild(label);
+
+      const preview = document.createElement('div');
+      preview.className = 'thumbnail-preview';
+      const img = document.createElement('img');
+      img.src = thumbDataUrl;
+      img.alt = `Page ${pageNum} preview`;
+      img.loading = 'lazy';
+      preview.appendChild(img);
+
+      card.appendChild(header);
+      card.appendChild(preview);
+
+      const toggleCard = (checked?: boolean) => {
+        const nextState = typeof checked === 'boolean' ? checked : !selectedPages.has(pageNum);
+        checkbox.checked = nextState;
+        if (nextState) {
+          selectedPages.add(pageNum);
+          card.classList.add('selected');
+        } else {
+          selectedPages.delete(pageNum);
+          card.classList.remove('selected');
+        }
+        updateSelectedCount();
+      };
+
+      card.addEventListener('click', (e) => {
+        if (e.target === checkbox || e.target === label) return;
+        toggleCard();
       });
-      pdf2imgPagesList.appendChild(dlBtn);
-    });
 
+      checkbox.addEventListener('change', () => {
+        toggleCard(checkbox.checked);
+      });
+
+      pdf2imgThumbnails.appendChild(card);
+    }
+
+    updateSelectedCount();
     pdf2imgResults.hidden = false;
-    pdf2imgDownloadHint.textContent =
-      blobs.length === 1
-        ? 'Download started automatically.'
-        : `All ${blobs.length} pages are downloading automatically. You can also save individual pages below.`;
-
-    // Stagger automatic download of pages so browser doesn't block rapid downloads
-    blobs.forEach((blob, idx) => {
-      setTimeout(() => {
-        const pageNumber = idx + 1;
-        const pageFileName =
-          blobs.length === 1
-            ? `${convertedBaseName}.png`
-            : `${convertedBaseName}-page-${pageNumber}.png`;
-        triggerDownload(blob, pageFileName, 'image/png');
-      }, idx * 250);
-    });
-
-    showSuccess('Document converted to images successfully. Download started.');
+    showSuccess(`All ${totalDocPages} pages processed. Select pages to export as ZIP.`);
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'An error occurred while converting the document.';
+    const message = err instanceof Error ? err.message : 'An error occurred while rendering the PDF.';
     showError(message);
   } finally {
     pdf2imgBtn.innerHTML = originalHtml;
     pdf2imgBtn.disabled = !pdfToConvertFile;
+  }
+});
+
+pdf2imgDownloadZipBtn.addEventListener('click', async () => {
+  if (!currentPdfDoc || selectedPages.size === 0) {
+    showError('Please select at least one page to export.');
+    return;
+  }
+
+  clearMessages();
+  const originalZipHtml = pdf2imgDownloadZipBtn.innerHTML;
+  pdf2imgDownloadZipBtn.disabled = true;
+  pdf2imgDownloadZipBtn.innerHTML = '<span class="spinner"></span> <span>Preparing ZIP...</span>';
+
+  try {
+    const pageList = Array.from(selectedPages).sort((a, b) => a - b);
+    const zipBlob = await exportPagesToZip(currentPdfDoc, pageList, (current, total) => {
+      pdf2imgDownloadZipBtn.innerHTML = `<span class="spinner"></span> <span>Rendering page ${current} of ${total}...</span>`;
+    });
+
+    const zipName = `${convertedBaseName}-images.zip`;
+    triggerDownload(zipBlob, zipName, 'application/zip');
+    showSuccess(`ZIP file downloaded successfully (${pageList.length} pages).`);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'An error occurred while creating the ZIP archive.';
+    showError(message);
+  } finally {
+    pdf2imgDownloadZipBtn.innerHTML = originalZipHtml;
+    updateSelectedCount();
+  }
+});
+
+/* =========================================================
+   5. PDF TO WORD TOOL
+   ========================================================= */
+let pdfToWordFile: File | null = null;
+
+const pdf2wordDropzone = document.getElementById('pdf2word-dropzone') as HTMLDivElement;
+const pdf2wordFileInput = document.getElementById('pdf2word-file-input') as HTMLInputElement;
+const pdf2wordFileCard = document.getElementById('pdf2word-file-card') as HTMLDivElement;
+const pdf2wordFileName = document.getElementById('pdf2word-file-name') as HTMLElement;
+const pdf2wordFileSize = document.getElementById('pdf2word-file-size') as HTMLElement;
+const pdf2wordRemoveFile = document.getElementById('pdf2word-remove-file') as HTMLButtonElement;
+const pdf2wordBtn = document.getElementById('pdf2word-btn') as HTMLButtonElement;
+
+function handlePdf2WordFile(files: FileList | null): void {
+  if (!files || files.length === 0) return;
+
+  clearMessages();
+
+  const file = files[0];
+  const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+
+  if (!isPdf) {
+    showError(`"${file.name}" is not a valid PDF file. Please select a .pdf file.`);
+    return;
+  }
+
+  pdfToWordFile = file;
+  pdf2wordFileName.textContent = file.name;
+  pdf2wordFileSize.textContent = formatBytes(file.size);
+
+  pdf2wordDropzone.hidden = true;
+  pdf2wordFileCard.hidden = false;
+  pdf2wordBtn.disabled = false;
+}
+
+function clearPdf2WordFile(): void {
+  pdfToWordFile = null;
+  pdf2wordFileInput.value = '';
+  pdf2wordDropzone.hidden = false;
+  pdf2wordFileCard.hidden = true;
+  pdf2wordBtn.disabled = true;
+  clearMessages();
+}
+
+pdf2wordRemoveFile.addEventListener('click', clearPdf2WordFile);
+
+pdf2wordDropzone.addEventListener('click', () => pdf2wordFileInput.click());
+pdf2wordDropzone.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault();
+    pdf2wordFileInput.click();
+  }
+});
+
+pdf2wordFileInput.addEventListener('change', () => {
+  handlePdf2WordFile(pdf2wordFileInput.files);
+});
+
+['dragenter', 'dragover'].forEach((eventName) => {
+  pdf2wordDropzone.addEventListener(eventName, (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    pdf2wordDropzone.classList.add('drag-active');
+  });
+});
+
+['dragleave', 'drop'].forEach((eventName) => {
+  pdf2wordDropzone.addEventListener(eventName, (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    pdf2wordDropzone.classList.remove('drag-active');
+  });
+});
+
+pdf2wordDropzone.addEventListener('drop', (e) => {
+  if (e.dataTransfer && e.dataTransfer.files) {
+    handlePdf2WordFile(e.dataTransfer.files);
+  }
+});
+
+pdf2wordBtn.addEventListener('click', async () => {
+  if (!pdfToWordFile) {
+    showError('Please select a PDF file to convert.');
+    return;
+  }
+
+  clearMessages();
+
+  const originalHtml = pdf2wordBtn.innerHTML;
+  pdf2wordBtn.disabled = true;
+  pdf2wordBtn.innerHTML = '<span class="spinner"></span> <span>Converting to Word...</span>';
+
+  try {
+    const docxBytes = await pdfToWord(pdfToWordFile, (current, total) => {
+      pdf2wordBtn.innerHTML = `<span class="spinner"></span> <span>Extracting page ${current} of ${total}...</span>`;
+    });
+
+    const baseName = pdfToWordFile.name.replace(/\.pdf$/i, '');
+    const docxFileName = `${baseName}.docx`;
+
+    triggerDownload(
+      docxBytes,
+      docxFileName,
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    );
+    showSuccess('Document converted to Word successfully. Download started.');
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'An error occurred while converting the document.';
+    showError(message);
+  } finally {
+    pdf2wordBtn.innerHTML = originalHtml;
+    pdf2wordBtn.disabled = !pdfToWordFile;
   }
 });

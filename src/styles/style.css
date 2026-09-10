@@ -286,6 +286,37 @@ body {
   color: var(--accent);
 }
 
+/* Tool Notice (e.g. PDF to Word disclaimer) */
+.tool-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  background-color: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  margin-bottom: 1.25rem;
+}
+
+.tool-notice-badge {
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  font-weight: 600;
+  background-color: var(--accent-soft);
+  color: var(--accent);
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+.tool-notice-text {
+  font-size: 0.84375rem;
+  color: var(--text-main);
+  line-height: 1.45;
+  margin: 0;
+}
+
 /* File Section & List */
 .file-section {
   margin-top: 1.5rem;
@@ -592,6 +623,103 @@ body {
   background-color: var(--accent-soft);
 }
 
+/* Thumbnail Grid & Selection Toolbar for PDF to Image */
+.thumbnail-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border-subtle);
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.thumbnail-selected-count {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-main);
+}
+
+.thumbnail-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.thumbnail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 0.85rem;
+  max-height: 480px;
+  overflow-y: auto;
+  padding: 0.25rem 0.25rem 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.thumbnail-card {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0.5rem;
+  cursor: pointer;
+  user-select: none;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.thumbnail-card:hover {
+  border-color: var(--text-dim);
+}
+
+.thumbnail-card.selected {
+  border-color: var(--accent);
+  background-color: #F8FAF9;
+}
+
+.thumbnail-header {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-bottom: 0.45rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.thumbnail-checkbox {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--accent);
+  cursor: pointer;
+  margin: 0;
+}
+
+.thumbnail-label {
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.thumbnail-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--bg-subtle);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  height: 150px;
+}
+
+.thumbnail-preview img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
 /* Trust / Context Strip */
 .trust-strip {
   display: grid;
@@ -627,6 +755,24 @@ body {
 
 .trust-step-text {
   color: var(--text-muted);
+}
+
+.trust-verify {
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--text-dim);
+  margin-top: 1rem;
+}
+
+.trust-link {
+  color: var(--text-muted);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color 0.15s ease;
+}
+
+.trust-link:hover {
+  color: var(--accent);
 }
 
 /* Actions & Primary Buttons */
@@ -744,4 +890,21 @@ body {
   color: var(--text-dim);
   font-size: 0.8125rem;
   margin: 0;
+}
+
+.footer-about {
+  color: var(--text-dim);
+  font-size: 0.8125rem;
+  margin-top: 0.4rem;
+}
+
+.footer-sublink {
+  color: var(--text-muted);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color 0.15s ease;
+}
+
+.footer-sublink:hover {
+  color: var(--accent);
 }
